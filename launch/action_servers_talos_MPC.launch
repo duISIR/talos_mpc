@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- set global arguments -->
+    <arg name="robot_name" default="talos"/>
+    <param name="robot_description_talos" command="$(find xacro)/xacro --inorder '$(find pal_gazebo_worlds_slmc)/urdf/talos_optas/talos_full_v2_withoutGripper.urdf'"/>
+
+
+    <!-- Spawn position controller -->
+    <node
+        name="trajectory_controller"
+        pkg="controller_manager"
+        type="spawner"
+        ns="/$(arg robot_name)"
+        args="/$(arg robot_name)/trajectory_controller"
+        respawn="false"
+        output="screen"
+    />
+
+    <!-- Launch a mux to send commands to the robot only from one source/controller -->
+    <node
+        name="mux_joint_position"
+        pkg="topic_tools"
+        type="mux"
+        ns="/$(arg robot_name)"
+        args="trajectory_controller/command
+            DefaultPositionController/command
+            ActionCmdPosePositionController/command
+            ActionCmdConfigPositionController/command
+            ActionTeleop2DPositionController/command
+            mux:=mux_joint_position"
+    />
+    <!-- Action Service Node for commanding end-effector poses -->
+    <node
+        name="action_server_config"
+        pkg="talos_mpc"
+        ns="/$(arg robot_name)"
+        type="action_server_config.py"
+        output="screen"
+        >
+        <param name="cmd_topic_name" type="string" value="/$(arg robot_name)/ActionCmdConfigPositionController/command"/>
+<!--        <remap from="/joint_states" to="/$(arg robot_name)/joint_states"/>-->
+        <remap from="/mux_selected" to="/$(arg robot_name)/mux_joint_position/selected"/>
+    </node>
+    <!-- Action Service Node for planning joint positions and build MPC to track the planning results -->
+    <node
+        name="action_server_MPC"
+        pkg="talos_mpc"
+        ns="/$(arg robot_name)"
+        type="action_server_MPC.py"
+        output="screen"
+        >
+        <param name="link_ee_right_arm" type="string" value="arm_right_7_link"/>
+        <param name="link_ee_left_arm" type="string" value="arm_left_7_link"/>
+        <param name="link_ee_right_leg" type="string" value="leg_right_6_link"/>
+        <param name="link_ee_left_leg" type="string" value="leg_left_6_link"/>
+        <param name="link_head" type="string" value="head_2_link"/>
+        <param name="link_1" type="string" value="base_link"/>
+        <param name="link_2" type="string" value="torso_1_link"/>
+        <param name="link_3" type="string" value="torso_2_link"/>
+        <param name="link_4" type="string" value="head_1_link"/>
+        <param name="link_5" type="string" value="head_2_link"/>
+        <param name="link_6" type="string" value="arm_left_1_link"/>
+        <param name="link_7" type="string" value="arm_left_2_link"/>
+        <param name="link_8" type="string" value="arm_left_3_link"/>
+        <param name="link_9" type="string" value="arm_left_4_link"/>
+        <param name="link_10" type="string" value="arm_left_5_link"/>
+        <param name="link_11" type="string" value="arm_left_6_link"/>
+        <param name="link_12" type="string" value="arm_left_7_link"/>
+        <param name="link_13" type="string" value="arm_right_1_link"/>
+        <param name="link_14" type="string" value="arm_right_2_link"/>
+        <param name="link_15" type="string" value="arm_right_3_link"/>
+        <param name="link_16" type="string" value="arm_right_4_link"/>
+        <param name="link_17" type="string" value="arm_right_5_link"/>
+        <param name="link_18" type="string" value="arm_right_6_link"/>
+        <param name="link_19" type="string" value="arm_right_7_link"/>
+        <param name="link_20" type="string" value="leg_left_1_link"/>
+        <param name="link_21" type="string" value="leg_left_2_link"/>
+        <param name="link_22" type="string" value="leg_left_3_link"/>
+        <param name="link_23" type="string" value="leg_left_4_link"/>
+        <param name="link_24" type="string" value="leg_left_5_link"/>
+        <param name="link_25" type="string" value="leg_left_6_link"/>
+        <param name="link_26" type="string" value="leg_right_1_link"/>
+        <param name="link_27" type="string" value="leg_right_2_link"/>
+        <param name="link_28" type="string" value="leg_right_3_link"/>
+        <param name="link_29" type="string" value="leg_right_4_link"/>
+        <param name="link_30" type="string" value="leg_right_5_link"/>
+        <param name="link_31" type="string" value="leg_right_6_link"/>
+
+
+
+
+
+        <param name="cmd_topic_name" type="string" value="/$(arg robot_name)/ActionCmdPosePositionController/command"/>
+<!--        <remap from="/joint_states" to="/$(arg robot_name)/joint_states"/>-->
+        <remap from="/mux_selected" to="/$(arg robot_name)/mux_joint_position/selected"/>
+    </node>
+</launch>
